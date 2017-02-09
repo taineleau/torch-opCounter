@@ -10,6 +10,7 @@ elseif opt.checkpoint ~= '' then
     require 'cudnn'
     require 'nngraph'
     model = torch.load(opt.checkpoint)
+   model = model:cuda()
 else
     assert(false, "Don't know how to load the model")
 end

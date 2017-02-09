@@ -33,8 +33,8 @@ end
 -- Compute #flops that specified module needs to process an input.
 -- module_handlers table is at the bottom of this file
 function compute_ops(module, input)
-    module_name = torch.type(module)
-    handler = module_handlers[module_name]
+    local module_name = torch.type(module)
+    local handler = module_handlers[module_name]
     assert(handler, string.format("No handler for module %s!", module_name))
     local ops = handler(module, input)
     op_count = op_count + ops
@@ -158,6 +158,17 @@ local function ops_sum(module, input)
    return ops
 end
 
+local function ops_mulconstant(module, input)
+    assert(not module.nInputDims, 'nInputDims mode of nn.Sum not supported.')
+    local ops = 1
+    for d = 1, input:dim() do
+        local s = input:size(d)
+        ops = ops * s
+    end
+    return ops
+end
+
+
 module_handlers = {
     -- Containers
     ['nn.Sequential'] = ops_nothing,
@@ -179,6 +190,7 @@ module_handlers = {
     -- Basic modules
     ['nn.Linear'] = ops_linear,
     ['nn.Sum'] = ops_sum,
+    ['nn.MulConstant'] = ops_mulconstant,
 
     -- Spatial Modules
     ['nn.SpatialConvolution'] = ops_convolution,
